@@ -1,0 +1,60 @@
+{"level":"info","time":"2025-04-22T15:52:44.358Z","scope":"/planner","tick":30,"message":"DECOMPOSED CHECK_SELF_CONTROL_REQS.R.5"}
+{"level":"info","time":"2025-04-22T15:52:44.358Z","scope":"/planner","tick":30,"message":"1. [O] SELF.R.7(RS5) Pre: "}
+{"level":"info","time":"2025-04-22T15:52:44.358Z","scope":"/planner","tick":30,"message":"2. [O] SELF.R.8(RS1) Pre: "}
+{"level":"info","time":"2025-04-22T15:52:44.359Z","scope":"/planner","tick":30,"message":"3. [O] SELF.R.9(RS2) Pre: "}
+{"level":"info","time":"2025-04-22T15:52:44.359Z","scope":"/planner","tick":30,"message":"4. [T] CHECK_SELF_CONTROL_REQS.R.5 Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","time":"2025-04-22T15:52:44.726Z","scope":"/leader/executor","tick":31,"message":"Order agent RS5 to perform task SELF.R.7"}
+{"level":"info","time":"2025-04-22T15:52:44.726Z","scope":"/leader/executor","tick":31,"message":"Order agent RS1 to perform task SELF.R.8"}
+{"level":"info","time":"2025-04-22T15:52:44.726Z","scope":"/leader/executor","tick":31,"message":"Order agent RS2 to perform task SELF.R.9"}
+{"level":"info","agentId":"RS2","time":"2025-04-22T15:52:44.726Z","scope":"/agent","tick":31,"message":"New task SELF.R.9 received by agent"}
+{"level":"info","agentId":"RS5","time":"2025-04-22T15:52:44.726Z","scope":"/agent","tick":31,"message":"New task SELF.R.7 received by agent"}
+{"level":"info","agentId":"RS1","time":"2025-04-22T15:52:44.726Z","scope":"/agent","tick":31,"message":"New task SELF.R.8 received by agent"}
+{"level":"info","agentId":"RS5","time":"2025-04-22T15:52:49.182Z","scope":"/agent/action/improve","tick":39,"message":"Task SELF.R.7 status changed to Completed: position improved"}
+{"level":"info","time":"2025-04-22T15:52:49.227Z","scope":"/leader/squad","tick":40,"message":"Task SELF.R.7(RS5) completed. There are 6 task(s) left in the plan"}
+{"level":"info","time":"2025-04-22T15:52:49.726Z","scope":"/leader/squad","tick":41,"message":"REPLACE PLAN"}
+{"level":"info","time":"2025-04-22T15:52:49.726Z","scope":"/leader/squad","tick":41,"message":"0. [O] SELF.R.8(RS1) Pre: "}
+{"level":"info","time":"2025-04-22T15:52:49.726Z","scope":"/leader/squad","tick":41,"message":"1. [O] SELF.R.9(RS2) Pre: "}
+{"level":"info","time":"2025-04-22T15:52:49.799Z","scope":"/leader/squad","tick":41,"message":"REPLACE PLAN"}
+{"level":"info","time":"2025-04-22T15:52:49.799Z","scope":"/leader/squad","tick":41,"message":"0. [O] SELF.R.8(RS1) Pre: "}
+{"level":"info","time":"2025-04-22T15:52:49.799Z","scope":"/leader/squad","tick":41,"message":"1. [O] SELF.R.9(RS2) Pre: "}
+{"level":"info","time":"2025-04-22T15:52:49.799Z","scope":"/leader/squad","tick":41,"message":"APPEND PLAN"}
+{"level":"info","time":"2025-04-22T15:52:49.799Z","scope":"/leader/squad","tick":41,"message":"2. [T] SOLVE_MAPF.R.A Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","time":"2025-04-22T15:52:49.799Z","scope":"/leader/squad","tick":41,"message":"3. [T] CHECK_SELF_CONTROL_REQS.R.B Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","time":"2025-04-22T15:52:49.799Z","scope":"/leader/squad","tick":41,"message":"4. [T] CHECK_ROBOT_BATTERIES.R.C Pre: `AFTER_TASK_TICK()`"}
+{"level":"debug","agentId":"RS2","time":"2025-04-22T15:52:54.727Z","scope":"/agent","tick":51,"message":"Agent RS2 is in state InProgress(task: SELF.R.9) more than 10.000329884s."}
+{"level":"info","agentId":"RS1","time":"2025-04-22T15:52:56.279Z","scope":"/agent/action/improve","tick":54,"message":"Task SELF.R.8 status changed to Completed: position improved"}
+{"level":"info","time":"2025-04-22T15:52:56.726Z","scope":"/leader/squad","tick":55,"message":"Task SELF.R.8(RS1) completed. There are 5 task(s) left in the plan"}
+{"level":"info","time":"2025-04-22T15:52:57.226Z","scope":"/leader/squad","tick":56,"message":"REPLACE PLAN"}
+{"level":"info","time":"2025-04-22T15:52:57.226Z","scope":"/leader/squad","tick":56,"message":"0. [O] SELF.R.9(RS2) Pre: "}
+{"level":"info","time":"2025-04-22T15:52:57.249Z","scope":"/leader/squad","tick":56,"message":"0. [O] SELF.R.9(RS2) Pre: "}
+{"level":"info","time":"2025-04-22T15:52:57.249Z","scope":"/leader/squad","tick":56,"message":"APPEND PLAN"}
+{"level":"info","time":"2025-04-22T15:52:57.249Z","scope":"/leader/squad","tick":56,"message":"1. [T] SOLVE_MAPF.R.D Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","time":"2025-04-22T15:52:57.249Z","scope":"/leader/squad","tick":56,"message":"2. [T] CHECK_SELF_CONTROL_REQS.R.E Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","time":"2025-04-22T15:52:57.249Z","scope":"/leader/squad","tick":56,"message":"3. [T] CHECK_ROBOT_BATTERIES.R.F Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","agentId":"RS2","time":"2025-04-22T15:52:58.286Z","scope":"/agent/action/improve","tick":58,"message":"Task SELF.R.9 status changed to Completed: position improved"}
+{"level":"info","time":"2025-04-22T15:52:58.727Z","scope":"/leader/squad","tick":59,"message":"Task SELF.R.9(RS2) completed. There are 4 task(s) left in the plan"}
+{"level":"info","time":"2025-04-22T15:52:59.263Z","scope":"/leader/squad","tick":60,"message":"APPEND PLAN"}
+{"level":"info","time":"2025-04-22T15:52:59.263Z","scope":"/leader/squad","tick":60,"message":"0. [T] SOLVE_MAPF.R.G Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","time":"2025-04-22T15:52:59.263Z","scope":"/leader/squad","tick":60,"message":"1. [T] CHECK_SELF_CONTROL_REQS.R.H Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","time":"2025-04-22T15:52:59.263Z","scope":"/leader/squad","tick":60,"message":"2. [T] CHECK_ROBOT_BATTERIES.R.I Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","time":"2025-04-22T15:53:26.919Z","scope":"/planner","tick":115,"message":"DECOMPOSED SOLVE_MAPF.R.G"}
+{"level":"info","time":"2025-04-22T15:53:26.919Z","scope":"/planner","tick":115,"message":"0. [O] DRE.R._(agent=RS8, from=51.23.6-1rxDC-2-A-100W110-0f0#5-0, to=51.23.6-DC-2-A-100L110-0f0#5-0, len=1) Pre: `NO_BIN`, `CAN_RESERVE_PATH(agent=RS8)`"}
+{"level":"info","time":"2025-04-22T15:53:26.919Z","scope":"/planner","tick":115,"message":"1. [O] DRE.R.10(agent=RS11, from=51.23.6-DC-2-A-100A110-1f0#5-0, to=51.23.6-1-ws-DC-2-A-100D0110-1f0#5-270, len=1) Pre: `NO_BIN`, `CAN_RESERVE_PATH(agent=RS11)`"}
+{"level":"info","time":"2025-04-22T15:53:26.919Z","scope":"/planner","tick":115,"message":"2. [T] SOLVE_MAPF.R.G Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","time":"2025-04-22T15:53:27.226Z","scope":"/leader/executor","tick":116,"message":"Order agent RS8 to perform task DRE.R._"}
+{"level":"info","time":"2025-04-22T15:53:27.226Z","scope":"/leader/executor","tick":116,"message":"Order agent RS11 to perform task DRE.R.10"}
+{"level":"info","agentId":"RS8","time":"2025-04-22T15:53:27.227Z","scope":"/agent","tick":116,"message":"New task DRE.R._ received by agent"}
+{"level":"info","agentId":"RS11","time":"2025-04-22T15:53:27.227Z","scope":"/agent","tick":116,"message":"New task DRE.R.10 received by agent"}
+{"level":"info","agentId":"RS11","time":"2025-04-22T15:53:27.277Z","scope":"/agent/action/drive","tick":116,"message":"Task DRE.R.10 status changed to InProgressContinue: need more paths: len:1 cur:0"}
+{"level":"info","agentId":"RS8","time":"2025-04-22T15:53:27.277Z","scope":"/agent/action/drive","tick":116,"message":"Task DRE.R._ status changed to InProgressContinue: need more paths: len:1 cur:0"}
+{"level":"info","agentId":"RS8","time":"2025-04-22T15:53:28.226Z","scope":"/agent/action/drive","tick":118,"message":"Task DRE.R._ status changed to InProgress: received new drive task"}
+{"level":"info","time":"2025-04-22T15:53:29.856Z","scope":"/planner","tick":121,"message":"DECOMPOSED SOLVE_MAPF.R.G"}
+{"level":"info","time":"2025-04-22T15:53:29.856Z","scope":"/planner","tick":121,"message":"2. [O] DRE.R.12(agent=RS12, from=51.23.6-1ryDC-2-A-1007110-0f0#5-0, to=51.23.6-DC-2-A-100A110-1f0#5-0, len=1) Pre: `NO_BIN`, `CAN_RESERVE_PATH(agent=RS12)`"}
+{"level":"info","time":"2025-04-22T15:53:29.856Z","scope":"/planner","tick":121,"message":"3. [T] SOLVE_MAPF.R.G Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","time":"2025-04-22T15:53:30.226Z","scope":"/leader/executor","tick":122,"message":"Order agent RS12 to perform task DRE.R.12"}
+{"level":"info","agentId":"RS12","time":"2025-04-22T15:53:30.227Z","scope":"/agent","tick":122,"message":"New task DRE.R.12 received by agent"}
+{"level":"info","time":"2025-04-22T15:55:21.377Z","scope":"/planner","tick":344,"message":"DECOMPOSED DROP_BIN_IN_NODE.R.37(binID=301.1-113, node=51.23.6-1-BCX-2-A-100R110-0f1, dirs=[90º 270º])"}
+{"level":"info","time":"2025-04-22T15:55:21.377Z","scope":"/planner","tick":344,"message":"15. [T] LIFT_TASK.R.5Q(kind=give, agent=RS4, node=51.23.6-1-BCX-2-A-100R110-0f1, dirs=[270º], bin=301.1-113, partner=aUnk) Pre: `IF_VALID(task=DROP_BIN_IN_NODE.R.37)`, `IS_ROBOT_READY(agentID=RS4)`"}
+{"level":"info","time":"2025-04-22T15:55:21.377Z","scope":"/planner","tick":344,"message":"DECOMPOSED LIFT_TASK.R.5Q(kind=give, agent=RS4, node=51.23.6-1-BCX-2-A-100R110-0f1, dirs=[270º], bin=301.1-113, partner=aUnk)"}
+{"level":"info","time":"2025-04-22T15:55:21.377Z","scope":"/planner","tick":344,"message":"15. [O] ALLOCATE_RESOURCE.R.5R(rType=cubecell, rID=51.23.6-1-BCX-2-A-100R110-0, oType=bin, oID=301.1-113) Pre: `IF_VALID(task=LIFT_TASK.R.5Q)`, `CAN_ALLOCATE`"}
+{"level":"info","time":"2025-04-22T15:55:21.377Z","scope":"/planner","tick":344,"message":"16. [O] GIVE.R.5S(bin=301.1-113, agent=RS4, partner=aUnk, node=51.23.6-1-BCX-2-A-100R110-0f1, dir=270) Pre: `RUN_AFTER(task=ALLOCATE_RESOURCE.R.5R)`, `HAS_NON_FAILURES(agentID=RS4, caps=Lifting|Gripping)`, `IS_ROBOT_IN_POSITION(agentID=RS4, poses=[51.23.6-1-BCX-2-A-100R110-0f1/270,51.23.6-1-BCX-2-A-100R110-0f1/90], e=[0.01500, 0.02500])`, `CAN_PLACE_BIN_INTO_NODE`"}
