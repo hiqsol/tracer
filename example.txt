@@ -21,7 +21,6 @@
 {"level":"info","time":"2025-04-22T15:52:49.799Z","scope":"/leader/squad","tick":41,"message":"2. [T] SOLVE_MAPF.R.A Pre: `AFTER_TASK_TICK()`"}
 {"level":"info","time":"2025-04-22T15:52:49.799Z","scope":"/leader/squad","tick":41,"message":"3. [T] CHECK_SELF_CONTROL_REQS.R.B Pre: `AFTER_TASK_TICK()`"}
 {"level":"info","time":"2025-04-22T15:52:49.799Z","scope":"/leader/squad","tick":41,"message":"4. [T] CHECK_ROBOT_BATTERIES.R.C Pre: `AFTER_TASK_TICK()`"}
-{"level":"debug","agentId":"RS2","time":"2025-04-22T15:52:54.727Z","scope":"/agent","tick":51,"message":"Agent RS2 is in state InProgress(task: SELF.R.9) more than 10.000329884s."}
 {"level":"info","agentId":"RS1","time":"2025-04-22T15:52:56.279Z","scope":"/agent/action/improve","tick":54,"message":"Task SELF.R.8 status changed to Completed: position improved"}
 {"level":"info","time":"2025-04-22T15:52:56.726Z","scope":"/leader/squad","tick":55,"message":"Task SELF.R.8(RS1) completed. There are 5 task(s) left in the plan"}
 {"level":"info","time":"2025-04-22T15:52:57.226Z","scope":"/leader/squad","tick":56,"message":"REPLACE PLAN"}
@@ -37,6 +36,8 @@
 {"level":"info","time":"2025-04-22T15:52:59.263Z","scope":"/leader/squad","tick":60,"message":"0. [T] SOLVE_MAPF.R.G Pre: `AFTER_TASK_TICK()`"}
 {"level":"info","time":"2025-04-22T15:52:59.263Z","scope":"/leader/squad","tick":60,"message":"1. [T] CHECK_SELF_CONTROL_REQS.R.H Pre: `AFTER_TASK_TICK()`"}
 {"level":"info","time":"2025-04-22T15:52:59.263Z","scope":"/leader/squad","tick":60,"message":"2. [T] CHECK_ROBOT_BATTERIES.R.I Pre: `AFTER_TASK_TICK()`"}
+{"level":"info","time":"2025-04-22T15:53:25.226Z","scope":"/leader/squad","tick":112,"message":"Task SEND_FM_MSG.R.Z(message=890000000000001, status=Assigned, binID=tUnk) completed. There are 27 task(s) left in the plan"}
+{"level":"info","time":"2025-04-22T15:53:26.226Z","scope":"/leader/squad","tick":114,"message":"Task SET_DESTINATION.R.+(agentID=RS12, node=51.23.6-1-WS-2-A-100D30-1f0, dirs=[90º 270º]) completed. There are 27 task(s) left in the plan"}
 {"level":"info","time":"2025-04-22T15:53:26.919Z","scope":"/planner","tick":115,"message":"DECOMPOSED SOLVE_MAPF.R.G"}
 {"level":"info","time":"2025-04-22T15:53:26.919Z","scope":"/planner","tick":115,"message":"0. [O] DRE.R._(agent=RS8, from=51.23.6-1rxDC-2-A-100W110-0f0#5-0, to=51.23.6-DC-2-A-100L110-0f0#5-0, len=1) Pre: `NO_BIN`, `CAN_RESERVE_PATH(agent=RS8)`"}
 {"level":"info","time":"2025-04-22T15:53:26.919Z","scope":"/planner","tick":115,"message":"1. [O] DRE.R.10(agent=RS11, from=51.23.6-DC-2-A-100A110-1f0#5-0, to=51.23.6-1-ws-DC-2-A-100D0110-1f0#5-270, len=1) Pre: `NO_BIN`, `CAN_RESERVE_PATH(agent=RS11)`"}
@@ -52,6 +53,7 @@
 {"level":"info","time":"2025-04-22T15:53:29.856Z","scope":"/planner","tick":121,"message":"2. [O] DRE.R.12(agent=RS12, from=51.23.6-1ryDC-2-A-1007110-0f0#5-0, to=51.23.6-DC-2-A-100A110-1f0#5-0, len=1) Pre: `NO_BIN`, `CAN_RESERVE_PATH(agent=RS12)`"}
 {"level":"info","time":"2025-04-22T15:53:29.856Z","scope":"/planner","tick":121,"message":"3. [T] SOLVE_MAPF.R.G Pre: `AFTER_TASK_TICK()`"}
 {"level":"info","time":"2025-04-22T15:53:30.226Z","scope":"/leader/executor","tick":122,"message":"Order agent RS12 to perform task DRE.R.12"}
+{"level":"info","time":"2025-04-22T15:53:36.727Z","scope":"/leader/squad","tick":135,"message":"Task DRE.R._(agent=RS8, from=51.23.6-DC-2-A-100L110-0f0#5-0, to=51.23.6-1-ws-DC-2-A-100D1110-0f0#5-90, len=1) completed. There are 26 task(s) left in the plan"}
 {"level":"info","agentId":"RS12","time":"2025-04-22T15:53:30.227Z","scope":"/agent","tick":122,"message":"New task DRE.R.12 received by agent"}
 {"level":"info","time":"2025-04-22T15:55:21.377Z","scope":"/planner","tick":344,"message":"DECOMPOSED DROP_BIN_IN_NODE.R.37(binID=301.1-113, node=51.23.6-1-BCX-2-A-100R110-0f1, dirs=[90º 270º])"}
 {"level":"info","time":"2025-04-22T15:55:21.377Z","scope":"/planner","tick":344,"message":"15. [T] LIFT_TASK.R.5Q(kind=give, agent=RS4, node=51.23.6-1-BCX-2-A-100R110-0f1, dirs=[270º], bin=301.1-113, partner=aUnk) Pre: `IF_VALID(task=DROP_BIN_IN_NODE.R.37)`, `IS_ROBOT_READY(agentID=RS4)`"}

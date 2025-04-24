@@ -1,1 +1,5 @@
 *.log
+__cache__
+*.pyc
+.aider.*
+1.json
