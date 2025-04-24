@@ -3,7 +3,6 @@
 import re
 import json
 import datetime
-import sys
 from typing import Dict, List, Any, Optional
 
 # Chrome Trace object
@@ -14,34 +13,70 @@ class CT:
     def E(data: Dict) -> Dict: return CT.build(data, {'ph': 'E'})
 
     @staticmethod
-    def build(data: Dict, data2: Dict = {}) -> Dict:
+    def build(data: Dict, data2: Dict) -> Dict:
+        if 'task' not in data:
+            raise ValueError(f"Task not found in data: {data}")
         data.update(data2)
         if 'pid' not in data:
             data['pid'] = 0
+        if 'time' in data:
+            data['ts'] = CT.time2ts(data['time'])
+        # data['name'] = CT.task2tt(data.get('task', ''))
+        data['name'] = data['task']
+        data['args'] = CT.data2args(data)
         res = {}
         for key in ['name', 'cat', 'ph', 'ts', 'pid', 'tid', 'args']:
-            if key in data:
+            if key in data and data[key]:
                 res[key] = data[key]
         return res
 
+    @staticmethod
+    def time2ts(time: str) -> int:
+        tstr = time.replace('Z', '+00:00')
+        return int(datetime.datetime.fromisoformat(tstr).timestamp() * 1000000)
+    @staticmethod
+    def task2tt(task: str) -> str:
+        ms = re.search(r'(\w+)\.(\w+)\.([\w\+]+)', task)
+        if ms:
+            return ms.group(1)
+        return task
+    @staticmethod
+    def data2args(data: Dict) -> Dict:
+        args = {}
+        for key in ['agent', 'status', 'message']:
+            if key in data:
+                args[key] = data[key]
+        return args
+
 class TraceLog:
+    APPEND_PLAN = 'AppendPlan'
+    REPLACE_PLAN = 'ReplacePlan'
+    DECOMPOSED = 'Decomposed'
+    NEW_TASK = 'NewTask'
+    PLAN_CHANGED = 'PlanChanged'
+    PERFORM_TASK = 'PerformTask'
+    STATUS_CHANGED = 'StatusChanged'
+    TASK_RECEIVED = 'TaskReceived'
+    TASK_COMPLETED = 'TaskCompleted'
+
     def __init__(self, path: str):
         self._path = path
         self._data = []
         self._events = []
+        self._state = ''
         self._count = 0
         self._unparsed = 0
         self._task_exp = r'(\w+\.\w+\.[\w\+]+)'
         self._tasks = {}
         self._parsers = {
-            'Decomposed':       [self._parse_Decomposed],
-            'AppendPlan':       [self._parse_AppendPlan],
-            'ReplacePlan':      [self._parse_ReplacePlan],
-            'NewTask':          [self._parse_NewTask],
-            'PerformTask':      [self._parse_PerformTask],
-            'StatusChanged':    [self._parse_StatusChanged],
-            'TaskReceived':     [self._parse_TaskReceived],
-            'TaskCompleted':    [
+            self.DECOMPOSED:        [self._parse_Decomposed],
+            self.APPEND_PLAN:       [self._parse_AppendPlan],
+            self.REPLACE_PLAN:      [self._parse_ReplacePlan],
+            self.NEW_TASK:          [self._parse_NewTask],
+            self.PERFORM_TASK:      [self._parse_PerformTask],
+            self.STATUS_CHANGED:    [self._parse_StatusChanged],
+            self.TASK_RECEIVED:     [self._parse_TaskReceived],
+            self.TASK_COMPLETED:    [
                 self._parse_TaskCompleted,
                 self._parse_TaskCompletedWithAgent,
                 self._parse_TaskCompletedWithMessage,
@@ -52,12 +87,21 @@ class TraceLog:
     def read_file(self, path: str) -> None:
         try:
             with open(path, 'r', encoding='utf-8') as f:
+                prev = {}
                 for line in f:
                     try:
                         data = json.loads(line)
                         res = self.parse_data(data)
                         if res:
                             self._data.append(res)
+                        ltip = res.get('ltip', '')
+                        if prev and prev['ltip'] == self.NEW_TASK and ltip != self.NEW_TASK:
+                            self._data.append({
+                                'ltip': self.PLAN_CHANGED,
+                                'time': prev['time'],
+                            })
+                        prev = res
+
                     except json.JSONDecodeError:
                         print(f"Invalid JSON: {line}")
                         continue
@@ -67,14 +111,14 @@ class TraceLog:
     def parse_data(self, data: Dict) -> Dict:
         if not self._validate_log_entry(data):
             return {}
-        for kind, parsers in self._parsers.items():
+        for ltip, parsers in self._parsers.items():
             for parser in parsers:
                 res = parser(data)
                 if res:
-                    res['kind'] = kind
+                    res['ltip'] = ltip
                     return res
         # print(f"Cannot parse message: {data['message']}")
-        self._unparsed+=1
+        self._unparsed += 1
         return {}
 
     @property
@@ -87,6 +131,8 @@ class TraceLog:
         ms = re.search(r'^APPEND PLAN', data['message'])
         if not ms:
             return {}
+        self._state = self.APPEND_PLAN
+        self._parent_task = ''
         return {
             'time': data['time'],
             'scope': data['scope'],
@@ -97,6 +143,7 @@ class TraceLog:
         ms = re.search(r'^REPLACE PLAN', data['message'])
         if not ms:
             return {}
+        self._parent_task = ''
         return {
             'time': data['time'],
             'scope': data['scope'],
@@ -109,7 +156,8 @@ class TraceLog:
         if not ms:
             return {}
 
-        return {
+        self._parent_task = ms.group(1)
+        data = {
             'task': ms.group(1),
             'time': data['time'],
             'scope': data['scope'],
@@ -124,7 +172,8 @@ class TraceLog:
 
         return {
             'task': ms.group(3),
-            'type': ms.group(2),
+            'optype': ms.group(2),
+            'parent': self._parent_task,
             'no': ms.group(1),
             'time': data['time'],
             'scope': data['scope'],
@@ -275,34 +324,35 @@ class TraceLog:
             })
 
     def render_as_tasks(self):
+        last = ''
         for data in self._data:
-            kind = data.get('kind')
-            res = self.data2task(kind, data)
+            ltip = data.get('ltip')
+            if 'time' in data:
+                last = data['time']
+            res = self.data2task(ltip, data)
             if not res:
                 continue
-            elif isinstance(res, list):
+            if isinstance(res, list):
                 self._events.extend(res)
             else:
                 self._events.append(res)
         for task, data in self._tasks.items():
             data['name'] = task
-            # data['cat'] = self.scope2cat(data.get('scope', ''))
-            data['ts'] = self.time2ts(data.get('time', ''))
             self._events.append(CT.B(data))
+            data['time'] = last
+            self._events.append(CT.E(data))
 
-    def data2task(self, kind, data: Dict):
+    def data2task(self, ltip, data: Dict):
         task = data.get('task', '')
-        # task = self.task2tt(task)
-        data['name'] = task
-        # data['cat'] = self.scope2cat(data.get('scope', ''))
-        data['ts'] = self.time2ts(data.get('time', ''))
-        # if 'agent' in data:
-            # data['tid'] = self.agent2tid(data.get('agent', ''))
-        if kind == 'NewTask':
+        if ltip == self.REPLACE_PLAN:
+            print(f"ReplacePlan: {data}\ntasks: {self._tasks.keys()}")
+            for task, task_data in self._tasks.items():
+                task_data['reset_time'] = data['time']
+        if ltip == self.NEW_TASK:
             if task not in self._tasks:
                 self._tasks[task] = data
-                return {}
-        elif kind == 'TaskCompleted':
+            self._tasks[task].pop('reset_time', None)
+        elif ltip == self.TASK_COMPLETED:
             if task not in self._tasks:
                 return {}
             else:
@@ -310,18 +360,28 @@ class TraceLog:
                 del self._tasks[task]
                 return [CT.B(start_data), CT.E(data)]
             # return CT.E(data)
+        elif ltip == self.PLAN_CHANGED:
+            res = []
+            for task, task_data in self._tasks.copy().items():
+                if 'reset_time' in task_data:
+                    del self._tasks[task]
+                    res.append(CT.B(task_data))
+                    task_data['time'] = task_data['reset_time']
+                    res.append(CT.E(task_data))
+            print(self.render_current_plan())
+            return res
         return {}
+
+    def render_current_plan(self):
+        res = f'\nCurrent plan: {len(self._tasks)} tasks\n'
+        for task, data in self._tasks.items():
+            res += f'{task}: {data}\n'
+        return res + '\n'
 
     def task2kebab(self, task: str) -> str:
         ms = re.search(r'(\w+)\.(\w+)\.([\w\+]+)', task)
         if ms:
             return '-'.join([ms.group(1), ms.group(2), ms.group(3)])
-        return task
-
-    def task2tt(self, task: str) -> str:
-        ms = re.search(r'(\w+)\.(\w+)\.([\w\+]+)', task)
-        if ms:
-            return ms.group(1)
         return task
 
     def scope2cat(self, scope: str) -> str:
@@ -331,10 +391,6 @@ class TraceLog:
     def agent2tid(self, agent: str) -> int:
         ms = re.search(r'(\d+)$', agent)
         return int(ms.group(1)) if ms else 0
-
-    def time2ts(self, time: str) -> int:
-        tstr = time.replace('Z', '+00:00')
-        return int(datetime.datetime.fromisoformat(tstr).timestamp() * 1000000)
 
     def chrome_trace(self, data: Dict) -> Dict:
         """Convert data to Chrome Trace format"""
@@ -363,9 +419,9 @@ class TraceLog:
 
     def dump(self) -> None:
         for item in self._data:
-            kind = item.get('kind')
-            del item['kind']
-            print(f'{kind:>20}: {item}')
+            ltip = item.get('ltip')
+            del item['ltip']
+            print(f'{ltip:>20}: {item}')
 
     def export_chrome_trace(self, output_path: Optional[str] = None) -> None:
         """Export trace data in Chrome Trace JSON format"""
