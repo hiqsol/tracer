@@ -3,27 +3,30 @@
 import re
 import json
 import datetime
-from typing import Dict, List, Any, Optional
+from typing import List, Optional
 from Parser import Parser
 
 # Chrome Trace object
 class CT:
     @staticmethod
-    def B(data: Dict) -> Dict: return CT.build(data, {'ph': 'B'})
+    def B(data: dict) -> dict: return CT.build(data, {'ph': 'B'})
     @staticmethod
-    def E(data: Dict) -> Dict: return CT.build(data, {'ph': 'E'})
+    def E(data: dict) -> dict: return CT.build(data, {'ph': 'E'})
 
     @staticmethod
-    def build(data: Dict, data2: Dict) -> Dict:
-        if 'task' not in data:
-            raise ValueError(f"Task not found in data: {data}")
+    def build(data1: dict, data2: dict) -> dict:
+        if 'task' not in data1:
+            raise ValueError(f"Task not found in data: {data1}")
+        data = data1.copy()
         data.update(data2)
-        if 'pid' not in data:
-            data['pid'] = 0
+
         if 'time' in data:
             data['ts'] = CT.time2ts(data['time'])
-        # data['name'] = CT.task2tt(data.get('task', ''))
-        data['name'] = data['task']
+        data['task'] = data.get('task', '')
+        data['type'] = CT.task2type(data['task'])
+        data['name'] = CT.data2name(data)
+        data['agent'] = CT.data2agent(data)
+        data['pid'] = CT.data2pid(data)
         data['args'] = CT.data2args(data)
         res = {}
         for key in ['name', 'cat', 'ph', 'ts', 'pid', 'tid', 'args']:
@@ -32,26 +35,48 @@ class CT:
         return res
 
     @staticmethod
+    def data2name(data: dict) -> str:
+        if data['type'] == 'DISP_MSG':
+            return f'{data["args"]["kind"]}-{data["task"]}'
+        return data['task']
+    @staticmethod
+    def data2pid(data: dict) -> int:
+        agent = CT.data2agent(data)
+        ms = re.search(r'(\d+)$', agent)
+        if ms:
+            return int(ms.group(1))
+        return 0
+    @staticmethod
+    def data2agent(data: dict) -> str:
+        if 'agent' in data:
+            return data['agent']
+        if 'agentID' in data:
+            return data['agentID']
+        if 'args' in data:
+            return CT.data2agent(data['args'])
+        return ''
+
+    @staticmethod
     def time2ts(time: str) -> int:
         tstr = time.replace('Z', '+00:00')
         return int(datetime.datetime.fromisoformat(tstr).timestamp() * 1000000)
     @staticmethod
-    def task2tt(task: str) -> str:
+    def task2type(task: str) -> str:
         ms = re.search(r'(\w+)\.(\w+)\.([\w\+]+)', task)
         if ms:
             return ms.group(1)
         return task
     @staticmethod
-    def data2args(data: Dict) -> Dict:
-        args = {}
-        for key in ['agent', 'status', 'message']:
-            if key in data:
+    def data2args(data: dict) -> dict:
+        args = data.get('args', {}).copy()
+        for key in ['task', 'parent', 'origin', 'agent', 'status', 'message', 'pres']:
+            if key in data and data[key]:
                 args[key] = data[key]
         return args
 
 
 class CTRenderer:
-    def __init__(self, events: List[Dict]):
+    def __init__(self, events: List[dict]):
         self._events = events
         self._tasks = {}
         self._currs = []
@@ -67,7 +92,7 @@ class CTRenderer:
         else:
             print(json.dumps(trace_data, indent=2))
 
-    def build_chrome_trace(self, events: List[Dict]) -> Dict[str, Any]:
+    def build_chrome_trace(self, events: List[dict]) -> dict:
         return {
             'traceEvents': events,
             'displayTimeUnit': 'ms',
@@ -79,8 +104,8 @@ class CTRenderer:
         for event in events:
             task = event.get('task', '')
             if task:
-                tt = CT.task2tt(task)
-                if tt in ['SOLVE_MAPF', 'CHECK_SELF_CONTROL_REQS', 'CHECK_ROBOT_BATTERIES', 'INCREMENT_THROUGHPUT']:
+                type = CT.task2type(task)
+                if type in ['SOLVE_MAPF', 'CHECK_SELF_CONTROL_REQS', 'CHECK_ROBOT_BATTERIES', 'INCREMENT_THROUGHPUT']:
                     continue
             ltip = event.get('ltip')
             if 'time' in event:
@@ -99,16 +124,17 @@ class CTRenderer:
             res.append(CT.E(data))
         return res
 
-    def process_task(self, ltip, data: Dict):
+    def process_task(self, ltip, data: dict):
         task = data.get('task', '')
-        # if ltip == Parser.DECOMPOSED:
-        #     self._tasks[task]['reset_plan'] = data['time']
+        if ltip == Parser.DECOMPOSED:
+            self._tasks[task]['reset_plan'] = data['time']
         if ltip == Parser.REPLACE_PLAN:
             # print(f"ReplacePlan: {data}\ntasks: {self._tasks.keys()}")
             for task, task_data in self._tasks.items():
                 task_data['reset_time'] = data['time']
         if ltip == Parser.NEW_TASK:
             if task not in self._tasks:
+                # print(f"NewTask: {task}: {data}")
                 self._tasks[task] = data
             self._tasks[task].pop('reset_time', None)
         elif ltip == Parser.TASK_COMPLETED:
@@ -132,6 +158,7 @@ class CTRenderer:
         return {}
 
     def render_current_plan(self):
+        # print(f'tasks: {self._tasks}')
         tree = {}
         for task in self._tasks.values():
             parent = task.get('parent', '')
@@ -143,9 +170,18 @@ class CTRenderer:
     def render_plan_tree(self, tree, parent='', depth=0):
         res = ''
         for task in tree.get(parent, []):
-            res += ' ' * 2 * depth + f'[{task["optype"]}] {task["task"]}\n'
+            args = self.render_args(task.get('args', {}))
+            res += ' ' * 2 * depth + f'[{task["optype"]}] {task["task"]}{args}\n'
             res += self.render_plan_tree(tree, task['task'], depth + 1)
         return res
+
+    def render_args(self, args: dict) -> str:
+        res = []
+        for key in args:
+            res.append(f'{key}={args[key]}')
+        if not res:
+            return ''
+        return '(' + ', '.join(res) + ')'
 
     def task2kebab(self, task: str) -> str:
         ms = re.search(r'(\w+)\.(\w+)\.([\w\+]+)', task)
