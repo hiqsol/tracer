@@ -20,7 +20,7 @@ def main():
         events.append(event)
         if event['ltip'] == parser.PLAN_CHANGED:
             no += 1
-            if no % 10 == 0 and no < 50:
+            if no % 10 == 0 and no < 150:
                 name = f'{output_file}-{no:05d}.json'
                 ctr = CTRenderer(events)
                 ctr.export(name)
@@ -28,6 +28,13 @@ def main():
     ctr = CTRenderer(events)
     ctr.export(f'{output_file}.json')
 
+    sqevs = []
+    for event in events:
+        scope = event.get('scope', '')
+        if scope == '/leader/squad':
+            sqevs.append(event)
+    sqr = CTRenderer(sqevs)
+    sqr.export(f'{output_file}-squad.json')
 
 if __name__ == '__main__':
     main()

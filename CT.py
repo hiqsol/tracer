@@ -22,6 +22,10 @@ class CT:
 
         if 'time' in data:
             data['ts'] = CT.time2ts(data['time'])
+        if data['ph'] == 'B':
+            data['start'] = data['time']
+        if data['ph'] == 'E':
+            data['finish'] = data['time']
         data['task'] = data.get('task', '')
         data['type'] = CT.task2type(data['task'])
         data['name'] = CT.data2name(data)
@@ -37,8 +41,11 @@ class CT:
     @staticmethod
     def data2name(data: dict) -> str:
         if data['type'] == 'DISP_MSG':
+            # return data['args']['kind']
             return f'{data["args"]["kind"]}-{data["task"]}'
+        # return data['type']
         return data['task']
+
     @staticmethod
     def data2pid(data: dict) -> int:
         agent = CT.data2agent(data)
@@ -69,7 +76,7 @@ class CT:
     @staticmethod
     def data2args(data: dict) -> dict:
         args = data.get('args', {}).copy()
-        for key in ['task', 'parent', 'origin', 'agent', 'status', 'message', 'pres']:
+        for key in ['task', 'parent', 'origin', 'agent', 'status', 'message', 'pres', 'scope', 'start', 'finish']:
             if key in data and data[key]:
                 args[key] = data[key]
         return args
@@ -127,11 +134,12 @@ class CTRenderer:
     def process_task(self, ltip, data: dict):
         task = data.get('task', '')
         if ltip == Parser.DECOMPOSED:
-            self._tasks[task]['reset_plan'] = data['time']
+            self._tasks[task]['reset_time'] = data['time']
         if ltip == Parser.REPLACE_PLAN:
             # print(f"ReplacePlan: {data}\ntasks: {self._tasks.keys()}")
             for task, task_data in self._tasks.items():
-                task_data['reset_time'] = data['time']
+                if 'reset_time' not in task_data:
+                    task_data['reset_time'] = data['time']
         if ltip == Parser.NEW_TASK:
             if task not in self._tasks:
                 # print(f"NewTask: {task}: {data}")
@@ -171,7 +179,8 @@ class CTRenderer:
         res = ''
         for task in tree.get(parent, []):
             args = self.render_args(task.get('args', {}))
-            res += ' ' * 2 * depth + f'[{task["optype"]}] {task["task"]}{args}\n'
+            pres = self.render_pres(task.get('pres', {}))
+            res += ' ' * 2 * depth + f'[{task["optype"]}] {task["task"]}{args}{pres}\n'
             res += self.render_plan_tree(tree, task['task'], depth + 1)
         return res
 
@@ -182,6 +191,11 @@ class CTRenderer:
         if not res:
             return ''
         return '(' + ', '.join(res) + ')'
+
+    def render_pres(self, pres: dict) -> str:
+        if not pres:
+            return ''
+        return ' Pre: ' + ', '.join(pres.values())
 
     def task2kebab(self, task: str) -> str:
         ms = re.search(r'(\w+)\.(\w+)\.([\w\+]+)', task)
