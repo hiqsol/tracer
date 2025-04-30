@@ -3,7 +3,7 @@
 import sys
 
 from Parser import Parser
-from CT import CTRenderer
+from CT import CTRenderer, CT
 
 def main():
     if len(sys.argv) < 2:
@@ -28,17 +28,12 @@ def main():
     ctr = CTRenderer(events)
     ctr.export(f'{output_file}.json')
 
-    sqevs = []
-    for event in events:
-        scope = event.get('scope', '')
-        if scope == '/leader/squad':
-            sqevs.append(event)
-    sqr = CTRenderer(sqevs)
-    sqr.export(f'{output_file}-squad.json')
-
     filter = 'GIVE.3p.Kk'
     trs = ctr.filter_by_task(filter)
     ctr.export_traces(trs, f'{output_file}-filtered.json')
+
+    CT.short_names = True
+    ctr.export(f'{output_file}-short.json')
 
 if __name__ == '__main__':
     main()

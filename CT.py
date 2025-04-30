@@ -8,6 +8,8 @@ from Parser import Parser
 
 # Chrome Trace object
 class CT:
+    short_names = False
+
     @staticmethod
     def B(data: dict) -> dict: return CT.build(data, {'ph': 'B'})
     @staticmethod
@@ -41,9 +43,11 @@ class CT:
     @staticmethod
     def data2name(data: dict) -> str:
         if data['type'] == 'DISP_MSG':
-            # return data['args']['kind']
+            if CT.short_names:
+                return data['args']['kind']
             return f'{data["args"]["kind"]}-{data["task"]}'
-        # return data['type']
+        if CT.short_names:
+            return data['type']
         return data['task']
 
     @staticmethod
@@ -89,6 +93,13 @@ class CTRenderer:
         self._events = events
         self._tasks = {}
         self._currs = []
+        self._options = {}
+
+    def set_option(self, key: str, value) -> None:
+        self._options[key] = value
+
+    def is_option(self, key: str) -> bool:
+        return self._options.get(key, False)
 
     def filter_by_task(self, filter: str) -> list[dict]:
         traces = self.process(self._events)
