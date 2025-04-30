@@ -79,6 +79,8 @@ class CT:
         for key in ['task', 'parent', 'origin', 'agent', 'status', 'message', 'pres', 'scope', 'start', 'finish']:
             if key in data and data[key]:
                 args[key] = data[key]
+        if 'agentID' in args:
+            del args['agentID']
         return args
 
 

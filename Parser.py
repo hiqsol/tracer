@@ -38,13 +38,10 @@ class Parser:
             self.PERFORM_TASK:      [self._parse_PerformTask],
             self.STATUS_CHANGED:    [self._parse_StatusChanged],
             self.TASK_RECEIVED:     [self._parse_TaskReceived],
-            self.TASK_COMPLETED:    [
-                self._parse_TaskCompleted,
-                self._parse_TaskCompletedWithAgent,
-                self._parse_TaskCompletedWithMessage,
-            ],
+            self.TASK_COMPLETED:    [self._parse_TaskCompleted],
         }
-        self.read_file(path)
+        if path:
+            self.read_file(path)
 
     def read_file(self, path: str) -> None:
         try:
@@ -137,15 +134,15 @@ class Parser:
             'optype': ms.group(2),
             'parent': self._parent_task,
             'origin': ms.groupdict().get('orgn', ''),
-            'args': self._parse_args(ms.group('args')),
-            'pres': self._parse_pres(ms.group('pres')),
+            'args': self.parse_args(ms.group('args')),
+            'pres': self.parse_pres(ms.group('pres')),
             'no': ms.group(1),
             'time': data['time'],
             'scope': data['scope'],
             'tick': data.get('tick', 0)
         }
 
-    def _parse_args(self, input: str) -> dict:
+    def parse_args(self, input: str) -> dict:
         if not input:
             return {}
         res = {}
@@ -171,20 +168,15 @@ class Parser:
             res[key.strip()] = value.strip()
         return res
 
-    def _parse_pres(self, input: str) -> dict:
+    def parse_pres(self, input: str) -> dict:
         # Pre: `RUN_AFTER(task=MARK_GROUP_ACTIVE.3p.1d)`, `IS_MESSAGE_GROUP_ACTIVE(fmID=870000000082862, groupID=47d113d4-c79b-42f7-8e24-17ffde564356)`
         if not input:
             return {}
 
-        # Remove spaces before groupId= in: `IS_MESSAGE_GROUP_ACTIVE(fmID=870000000082862, groupID=47d113d4-c79b-42f7-8e24-17ffde564356)`
-        ms = re.search(r'^(.*), groupID=(.*)', input)
-        if ms:
-            input = ms.group(1) + ',groupID=' + ms.group(2)
-
         res = {}
-        pres = input.split(', ')
+        pres = input.strip('`').split('`, `')
         for i in range(len(pres)):
-            res[f'pre{i}'] = pres[i].strip('`')
+            res[f'pre{i}'] = pres[i]
         return res
 
 
@@ -230,43 +222,12 @@ class Parser:
 
     def _parse_TaskCompleted(self, data: dict) -> dict:
         # Task SELF.R.9(RS2) completed. There are 4 task(s) left in the plan
-        ms = re.search(rf'Task {self._task_exp}\((\w+)\) completed\.', data['message'])
-        if not ms:
-            # Task SET_DESTINATION.R.+(agentID=RS12, node=51.23.6-1-WS-2-A-100D30-1f0, dirs=[90º 270º]) completed. There are 27 task(s) left in the plan
-            ms = re.search(rf'Task {self._task_exp}\(agentID=(\w+).+\) completed\.', data['message'])
+        ms = re.search(rf'Task {self._task_exp}{self._args_exp} completed\. There are', data['message'])
         if not ms:
             return {}
         return {
             'task': ms.group(1),
-            'agent': ms.group(2),
-            'time': data['time'],
-            'scope': data['scope'],
-            'tick': data.get('tick', 0)
-        }
-
-    def _parse_TaskCompletedWithAgent(self, data: dict) -> dict:
-        # Task DRE.R._(agent=RS8, from=51.23.6-DC-2-A-100L110-0f0#5-0, to=51.23.6-1-ws-DC-2-A-100D1110-0f0#5-90, len=1) completed. There are 26 task(s) left in the plan"}
-        ms = re.search(rf'Task {self._task_exp}\(agent=(\w+).+\) completed\.', data['message'])
-        if not ms:
-            return {}
-        return {
-            'task': ms.group(1),
-            'agent': ms.group(2),
-            'time': data['time'],
-            'scope': data['scope'],
-            'tick': data.get('tick', 0)
-        }
-
-    def _parse_TaskCompletedWithMessage(self, data: dict) -> dict:
-        # Task SEND_FM_MSG.R.Z(message=890000000000001, status=Assigned, binID=tUnk) completed. There are 27 task(s) left in the plan"}
-        ms = re.search(rf'Task {self._task_exp}\(message=(\w+),\s+status=(\w+),\s+binID=(\w+)\) completed\.', data['message'])
-        if not ms:
-            return {}
-        return {
-            'task': ms.group(1),
-            'message': ms.group(2),
-            'status': ms.group(3),
-            'bin': ms.group(4),
+            'args': self.parse_args(ms.group('args')),
             'time': data['time'],
             'scope': data['scope'],
             'tick': data.get('tick', 0)
