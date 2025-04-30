@@ -75,6 +75,7 @@ class Parser:
                 res = parser(data)
                 if res:
                     res['ltip'] = ltip
+                    res['message'] = data['message']
                     return res
         # print(f"Cannot parse message: {data['message']}")
         self._unparsed += 1

@@ -90,16 +90,37 @@ class CTRenderer:
         self._tasks = {}
         self._currs = []
 
-    def export(self, output_path: Optional[str] = None) -> None:
-        """Export trace data in Chrome Trace JSON format"""
+    def filter_by_task(self, filter: str) -> list[dict]:
         traces = self.process(self._events)
-        trace_data = self.build_chrome_trace(traces)
+        res = []
+        for trace in traces:
+            keep = False
+            args = trace.get('args', {})
+            message = args.get('message', '')
+            parent = args.get('parent', '')
+            origin = args.get('origin', '')
+            if filter in message:
+                keep = True
+            if parent == filter:
+                keep = True
+            if origin == filter:
+                keep = True
+            if keep:
+                res.append(trace)
+        return res
+
+    def export(self, output_path: Optional[str] = None) -> None:
+        traces = self.process(self._events)
+        self.export_traces(traces, output_path)
+
+    def export_traces(self, traces: List[dict], output_path: Optional[str] = None) -> None:
+        """Export trace data in Chrome Trace JSON format"""
         if output_path:
             with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(trace_data, f, indent=2)
+                json.dump(self.build_chrome_trace(traces), f, indent=2)
             print(f"Trace exported to {output_path}")
         else:
-            print(json.dumps(trace_data, indent=2))
+            print(json.dumps(traces, indent=2))
 
     def build_chrome_trace(self, events: List[dict]) -> dict:
         return {
@@ -107,7 +128,7 @@ class CTRenderer:
             'displayTimeUnit': 'ms',
         }
 
-    def process(self, events):
+    def process(self, events) -> list[dict]:
         res = []
         last = ''
         for event in events:
@@ -152,6 +173,7 @@ class CTRenderer:
                 return {}
             else:
                 start_data = self._tasks[task]
+                start_data['finish'] = data['time']
                 del self._tasks[task]
                 return [CT.B(start_data), CT.E(data)]
             # return CT.E(data)

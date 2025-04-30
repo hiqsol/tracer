@@ -36,6 +36,10 @@ def main():
     sqr = CTRenderer(sqevs)
     sqr.export(f'{output_file}-squad.json')
 
+    filter = 'GIVE.3p.Kk'
+    trs = ctr.filter_by_task(filter)
+    ctr.export_traces(trs, f'{output_file}-filtered.json')
+
 if __name__ == '__main__':
     main()
 
