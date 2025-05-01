@@ -28,7 +28,7 @@ def main():
     ctr = CTRenderer(events)
     ctr.export(f'{output_file}.json')
 
-    filter = 'GIVE.3p.Kk'
+    filter = 'ALLOCATE_RESOURCE.3p.Gu'
     trs = ctr.filter_by_task(filter)
     ctr.export_traces(trs, f'{output_file}-filtered.json')
 

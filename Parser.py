@@ -38,7 +38,10 @@ class Parser:
             self.PERFORM_TASK:      [self._parse_PerformTask],
             self.STATUS_CHANGED:    [self._parse_StatusChanged],
             self.TASK_RECEIVED:     [self._parse_TaskReceived],
-            self.TASK_COMPLETED:    [self._parse_TaskCompleted],
+            self.TASK_COMPLETED:    [
+                self._parse_TaskCompleted,
+                self._parse_TaskMarkedAsCompleted,
+            ],
         }
         if path:
             self.read_file(path)
@@ -229,6 +232,18 @@ class Parser:
         return {
             'task': ms.group(1),
             'args': self.parse_args(ms.group('args')),
+            'time': data['time'],
+            'scope': data['scope'],
+            'tick': data.get('tick', 0)
+        }
+
+    def _parse_TaskMarkedAsCompleted(self, data: dict) -> dict:
+        # Task MOVE_BIN_TO_STORAGE.3p.sA is marked as completed because SEND_FM_MSG.3p.sH is already completed"}
+        ms = re.search(rf'Task {self._task_exp} is marked as completed', data['message'])
+        if not ms:
+            return {}
+        return {
+            'task': ms.group(1),
             'time': data['time'],
             'scope': data['scope'],
             'tick': data.get('tick', 0)

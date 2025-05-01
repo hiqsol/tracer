@@ -80,7 +80,7 @@ class CT:
     @staticmethod
     def data2args(data: dict) -> dict:
         args = data.get('args', {}).copy()
-        for key in ['task', 'parent', 'origin', 'agent', 'status', 'message', 'pres', 'scope', 'start', 'finish']:
+        for key in ['task', 'parent', 'origin', 'agent', 'status', 'pres', 'scope', 'start', 'finish']:
             if key in data and data[key]:
                 args[key] = data[key]
         if 'agentID' in args:
@@ -186,7 +186,9 @@ class CTRenderer:
                 start_data = self._tasks[task]
                 start_data['finish'] = data['time']
                 del self._tasks[task]
-                return [CT.B(start_data), CT.E(data)]
+                finish_data = start_data.copy()
+                finish_data.update(data)
+                return [CT.B(start_data), CT.E(finish_data)]
             # return CT.E(data)
         elif ltip == Parser.PLAN_CHANGED:
             res = []
