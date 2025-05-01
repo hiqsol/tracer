@@ -163,7 +163,6 @@ class Parser:
                 res[f'arg{i}'] = args[i]
             return res
 
-
         for arg in args:
             try:
                 key, value = arg.split('=', 1)
@@ -182,7 +181,6 @@ class Parser:
         for i in range(len(pres)):
             res[f'pre{i}'] = pres[i]
         return res
-
 
     def _parse_PerformTask(self, data: dict) -> dict:
         # Order agent RS5 to perform task SELF.R.7
