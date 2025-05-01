@@ -159,7 +159,6 @@ class CTRenderer:
             else:
                 res.append(data)
         for task, data in self._tasks.items():
-            data['name'] = task
             res.append(CT.B(data))
             data['time'] = last
             res.append(CT.E(data))
