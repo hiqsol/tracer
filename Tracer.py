@@ -3,6 +3,7 @@
 import re
 import json
 import datetime
+from Plan import Plan
 from Parser import Parser
 
 # In general tracing works in several steps:
@@ -152,8 +153,10 @@ class CT:
 class Tracer:
     def __init__(self, events: list[dict]):
         self._tasks = {}
+        self._del_tasks = {}
         self._currs = []
         self._options = {}
+        self.parser = Parser('')
         self._events = events
         self._traces = self.prepare(events)
 
@@ -185,27 +188,26 @@ class Tracer:
         self.export_traces(self._traces, output_path)
 
     def export_traces(self, traces: list[Trace], output_path: str) -> None:
+        trs = []
+        for trace in traces:
+            type = trace.get('type')
+            if not type in ['SOLVE_MAPF', 'CHECK_SELF_CONTROL_REQS', 'CHECK_ROBOT_BATTERIES', 'INCREMENT_THROUGHPUT']:
+                trs.append(trace)
         with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(CT.build_file(traces), f, indent=2)
+            json.dump(CT.build_file(trs), f, indent=2)
         print(f"Trace exported to {output_path}")
 
     def prepare(self, events) -> list[Trace]:
         res = []
         last = ''
-        self._tasks = {}
         for event in events:
             if isinstance(event, Trace):
                 res.append(event)
                 continue
-            task = event.get('task', '')
-            if task:
-                type = Trace.task2type(task)
-                if type in ['SOLVE_MAPF', 'CHECK_SELF_CONTROL_REQS', 'CHECK_ROBOT_BATTERIES', 'INCREMENT_THROUGHPUT']:
-                    continue
             ltip = event.get('ltip')
             if 'time' in event:
                 last = event['time']
-            data = self.process_task(ltip, event)
+            data = self.prepare_task(ltip, event)
             if not data:
                 continue
             if isinstance(data, list):
@@ -217,7 +219,7 @@ class Tracer:
             res.append(Trace(data))
         return res
 
-    def process_task(self, ltip, data: dict):
+    def prepare_task(self, ltip, data: dict):
         task = data.get('task', '')
         if ltip == Parser.DECOMPOSED:
             self._tasks[task]['reset_time'] = data['time']
@@ -242,43 +244,24 @@ class Tracer:
             res = []
             for task, task_data in self._tasks.copy().items():
                 if 'reset_time' in task_data:
+                    self._del_tasks[task] = task_data
                     del self._tasks[task]
                     task_data['finish'] = task_data['reset_time']
                     res.append(Trace(task_data))
             return res
         return {}
 
+    def get_task(self, task: str) -> dict:
+        if task in self._tasks:
+            return self._tasks[task]
+        if task in self._del_tasks:
+            return self._del_tasks[task]
+        return {}
+
     def render_current_plan(self):
-        # print(f'tasks: {self._tasks}')
-        tree = {}
-        for task in self._tasks.values():
-            parent = task.get('parent', '')
-            if parent not in tree:
-                tree[parent] = []
-            tree[parent].append(task)
-        return f'{len(self._tasks)} tasks\n' + self.render_plan_tree(tree)
-
-    def render_plan_tree(self, tree, parent='', depth=0):
-        res = ''
-        for task in tree.get(parent, []):
-            args = self.render_args(task.get('args', {}))
-            pres = self.render_pres(task.get('pres', {}))
-            res += ' ' * 2 * depth + f'[{task["optype"]}] {task["task"]}{args}{pres}\n'
-            res += self.render_plan_tree(tree, task['task'], depth + 1)
-        return res
-
-    def render_args(self, args: dict) -> str:
-        res = []
-        for key in args:
-            res.append(f'{key}={args[key]}')
-        if not res:
-            return ''
-        return '(' + ', '.join(res) + ')'
-
-    def render_pres(self, pres: dict) -> str:
-        if not pres:
-            return ''
-        return ' Pre: ' + ', '.join(pres.values())
+        plan = Plan(self)
+        plan.add_tasks(self._tasks)
+        return plan.render()
 
     def task2kebab(self, task: str) -> str:
         ms = re.search(r'(\w+)\.(\w+)\.([\w\+]+)', task)

@@ -51,6 +51,9 @@ class Parser:
             with open(path, 'r', encoding='utf-8') as f:
                 prev = {}
                 for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
                     try:
                         data = json.loads(line)
                         res = self.parse_data(data)
@@ -159,16 +162,24 @@ class Parser:
         args = input.split(', ')
         if len(args) == 1:
             args = input.split(' ')
-            for i in range(len(args)):
-                res[f'arg{i}'] = args[i]
-            return res
 
-        for arg in args:
+        for i, arg in enumerate(args):
             try:
                 key, value = arg.split('=', 1)
             except ValueError:
-                raise Exception(f"Invalid argument format: {arg}\ninput: {input}")
+                key = f'arg{i}'
+                value = arg
             res[key.strip()] = value.strip()
+        return res
+
+    def render_args(self, args: dict) -> str:
+        res = ''
+        for k, v in args.items():
+            if k == 'arg0':
+                return ' '.join(args.values())
+            if res:
+                res += ', '
+            res += f'{k}={v}'
         return res
 
     def parse_pres(self, input: str) -> dict:
@@ -179,8 +190,37 @@ class Parser:
         res = {}
         pres = input.strip('`').split('`, `')
         for i in range(len(pres)):
-            res[f'pre{i}'] = pres[i]
+            vs = self.parse_pre(pres[i])
+            res[f'{i}.{vs["name"]}'] = vs['args']
         return res
+
+    def parse_pre(self, input: str) -> dict:
+        # RUN_AFTER(task=MARK_GROUP_ACTIVE.3p.1d)
+        # IS_MESSAGE_GROUP_ACTIVE(fmID=870000000082862, groupID=47d113d4-c79b-42f7-8e24-17ffde564356)
+        # AFTER_TASK_TICK()
+        # NO_BIN
+        ms = re.search(rf'(?P<name>\w+){self._args_exp}', input)
+        if not ms:
+            raise ValueError(f"Invalid precondition format: {input}")
+        return {
+            'name': ms.group('name'),
+            'args': self.parse_args(ms.group('args')),
+        }
+
+    def render_pres(self, pres: dict) -> str:
+        res = ''
+        for k, v in pres.items():
+            if res:
+                res += ', '
+            res += '`' + self.render_pre(k, v) + '`'
+        return res
+
+    def render_pre(self, key: str, args: dict) -> str:
+        arg = self.render_args(args)
+        _, name = key.split('.', 1)
+        if not arg:
+            return name if name=='NO_BIN' else f'{name}()'
+        return f'{name}({arg})'
 
     def _parse_PerformTask(self, data: dict) -> dict:
         # Order agent RS5 to perform task SELF.R.7
