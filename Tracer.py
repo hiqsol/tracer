@@ -25,9 +25,17 @@ class Tracer:
         self._tasks = {}
         self._actions = {}
         self._del_tasks = {}
-        self._currs = []
         self._options = {}
         self.parser = Parser('')
+        self._methods = {
+            'Decomposed':       self._prepare_Decomposed,
+            'ReplacePlan':      self._prepare_ReplacePlan,
+            'NewTask':          self._prepare_NewTask,
+            'TaskCompleted':    self._prepare_TaskCompleted,
+            'PlanChanged':      self._prepare_PlanChanged,
+            'TaskReceived':     self._prepare_TaskReceived,
+            'StatusChanged':    self._prepare_StatusChanged,
+        }
         self._events = events
         self._traces = self.prepare(events)
 
@@ -41,7 +49,7 @@ class Tracer:
             ltip = event.get('ltip')
             if 'time' in event:
                 last = event['time']
-            data = self.prepare_task(ltip, event)
+            data = self._prepare_event(ltip, event)
             if not data:
                 continue
             if isinstance(data, list):
@@ -53,54 +61,56 @@ class Tracer:
             res.append(Trace(data))
         return res
 
-    def prepare_task(self, ltip, data: dict):
+    def _prepare_event(self, ltip, data: dict):
         task = data.get('task', '')
-        if ltip == Parser.DECOMPOSED:
-            self._tasks[task]['reset_time'] = data['time']
-        if ltip == Parser.REPLACE_PLAN:
-            # print(f"ReplacePlan: {data}\ntasks: {self._tasks.keys()}")
-            for task, task_data in self._tasks.items():
-                if 'reset_time' not in task_data:
-                    task_data['reset_time'] = data['time']
-        if ltip == Parser.NEW_TASK:
-            if task not in self._tasks:
-                # print(f"NewTask: {task}: {data}")
-                self._tasks[task] = data
-            self._tasks[task].pop('reset_time', None)
-        elif ltip == Parser.TASK_COMPLETED:
-            if task not in self._tasks:
-                return {}
-            start_data = self._tasks[task]
-            start_data['finish'] = data['time']
-            del self._tasks[task]
-            return Trace(start_data)
-        elif ltip == Parser.PLAN_CHANGED:
-            res = []
-            for task, task_data in self._tasks.copy().items():
-                if 'reset_time' in task_data:
-                    self._del_tasks[task] = task_data
-                    del self._tasks[task]
-                    task_data['finish'] = task_data['reset_time']
-                    res.append(Trace(task_data))
-            return res
-        elif ltip == Parser.TASK_RECEIVED:
-            self._actions[task] = data
-            return []
-        elif ltip == Parser.STATUS_CHANGED:
-            if task not in self._actions:
-                raise ValueError(f"Task {task} not found in actions")
-            if not self.has_task(task):
-                raise ValueError(f"Task {task} not found in tasks: {self._tasks.keys()}")
-            action = self._actions[task]
-            task_data = self.get_task(task).copy()
-            task_data['task'] = 'A:' + task
-            task_data['optype'] = Trace.ACTION
-            task_data['start'] = action['time']
-            task_data['status'] = data['status']
-            task_data['finish'] = data['time']
-            del self._actions[task]
-            return Trace(task_data)
-        return {}
+        method = self._methods.get(ltip, None)
+        if method:
+            return method(task, data)
+        return []
+
+    def _prepare_Decomposed(self, task: str, data: dict):
+        self._tasks[task]['reset_time'] = data['time']
+    def _prepare_ReplacePlan(self, _: str, data: dict):
+        for _, task_data in self._tasks.items():
+            if 'reset_time' not in task_data:
+                task_data['reset_time'] = data['time']
+    def _prepare_NewTask(self, task: str, data: dict):
+        if task not in self._tasks:
+            self._tasks[task] = data
+        self._tasks[task].pop('reset_time', None)
+    def _prepare_TaskCompleted(self, task: str, data: dict):
+        if task not in self._tasks:
+            return {}
+        start_data = self._tasks[task]
+        start_data['finish'] = data['time']
+        del self._tasks[task]
+        return Trace(start_data)
+    def _prepare_PlanChanged(self, _: str, __: dict):
+        res = []
+        for task, task_data in self._tasks.copy().items():
+            if 'reset_time' in task_data:
+                self._del_tasks[task] = task_data
+                del self._tasks[task]
+                task_data['finish'] = task_data['reset_time']
+                res.append(Trace(task_data))
+        return res
+    def _prepare_TaskReceived(self, task: str, data: dict):
+        self._actions[task] = data
+        return []
+    def _prepare_StatusChanged(self, task: str, data: dict):
+        if task not in self._actions:
+            raise ValueError(f"Task {task} not found in actions")
+        if not self.has_task(task):
+            raise ValueError(f"Task {task} not found in tasks: {self._tasks.keys()}")
+        action = self._actions[task]
+        task_data = self.get_task(task).copy()
+        task_data['task'] = 'A:' + task
+        task_data['optype'] = Trace.ACTION
+        task_data['start'] = action['time']
+        task_data['status'] = data['status']
+        task_data['finish'] = data['time']
+        del self._actions[task]
+        return Trace(task_data)
 
     @property
     def traces(self) -> list[Trace]:
