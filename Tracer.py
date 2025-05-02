@@ -2,8 +2,9 @@
 
 import re
 import json
-import datetime
+from CT import CT
 from Plan import Plan
+from Trace import Trace
 from Parser import Parser
 
 # In general tracing works in several steps:
@@ -18,146 +19,6 @@ from Parser import Parser
 # Event is simple dictionary with the keys like: ltip, time, task, args, pres, etc.
 # Trace is a class that represents a single task with its start and finish time, agent, and other attributes
 # CT class provides methods to convert Trace objects to Chrome Trace format
-
-class Trace:
-    ACTION = 'A'
-    TASK = 'T'
-    OPERATOR = 'O'
-    PRE = 'P'
-
-    def __init__(self, data: dict):
-        self._data = self.prepare(data)
-
-    @property
-    def task(self) -> str:
-        return self.get('task')
-
-    def get_all(self) -> dict:
-        return self._data
-    def has(self, key: str) -> bool:
-        return key in self._data and self._data[key]
-    def get(self, key: str) -> str:
-        if key not in self._data:
-            raise KeyError(f"Key '{key}' not found in Trace data: {self._data}")
-        return self._data.get(key, '')
-    def get_dict(self, key: str) -> dict:
-        if key not in self._data:
-            raise KeyError(f"Key '{key}' not found in Trace data: {self._data}")
-        return self._data.get(key, {})
-    def get_ms(self, key: str) -> int:
-        return Trace.time2ms(self.get(key))
-
-    def prepare(self, data: dict) -> dict:
-        data['agent'] = Trace.data2agent(data)
-        if 'agentID' in data:
-            del data['agentID']
-        if 'agentID' in data['args']:
-            del data['args']['agentID']
-        if 'start' not in data:
-            if 'time' not in data:
-                raise ValueError(f"Start time not found in Trace data: {data}")
-            data['start'] = data['time']
-        if 'finish' not in data:
-            raise ValueError(f"Finish time not found in Trace data: {data}")
-        task = data.get('task', '')
-        name = task
-        type = Trace.task2type(task)
-        if type == 'DISP_MSG':
-            type = data['args']['kind']
-            name = f'{type}-{task}'
-        data['name'] = name
-        data['type'] = type
-        return data
-
-    @staticmethod
-    def task2type(task: str) -> str:
-        ms = re.search(r'(\w+)\.(\w+)\.([\w\+]+)', task)
-        if ms:
-            return ms.group(1)
-        return task
-    @staticmethod
-    def data2agent(data: dict) -> str:
-        if 'agent' in data:
-            return data['agent']
-        if 'agentID' in data:
-            return data['agentID']
-        if 'args' in data:
-            return Trace.data2agent(data['args'])
-        return ''
-    @staticmethod
-    def time2ms(time: str) -> int:
-        tstr = time.replace('Z', '+00:00')
-        return int(datetime.datetime.fromisoformat(tstr).timestamp() * 1000000)
-
-# Chrome Trace object
-class CT:
-    short_names = False
-
-    @staticmethod
-    def build_file(traces: list[Trace]) -> dict:
-        cts = []
-        for trace in traces:
-            cts.append(CT.X(trace))
-        return {
-            'traceEvents': cts,
-            'displayTimeUnit': 'ms',
-        }
-    @staticmethod
-    def B(trace: Trace) -> dict:
-        return CT.build('B', trace)
-    @staticmethod
-    def E(trace: Trace) -> dict:
-        return CT.build('E', trace)
-    @staticmethod
-    def X(trace: Trace) -> dict:
-        data = CT.build('X', trace)
-        data['dur'] = trace.get_ms('finish') - data['ts']
-        return data
-
-    @staticmethod
-    def build(ph: str, trace: Trace) -> dict:
-        data = {
-            'name': CT.trace2name(trace),
-            'cat':  CT.trace2cat(trace),
-            'ph':   ph,
-            'ts':   trace.get_ms('start'),
-            'pid':  CT.trace2pid(trace),
-            'tid':  CT.trace2tid(trace),
-            'args': CT.trace2args(trace),
-        }
-        return {k: v for k, v in data.items() if v}
-
-    @staticmethod
-    def trace2cat(trace: Trace) -> str:
-        return trace.get('type')
-    @staticmethod
-    def trace2name(trace: Trace) -> str:
-        return trace.get('type') if CT.short_names else trace.get('name')
-
-    @staticmethod
-    def trace2pid(trace: Trace) -> int:
-        if not trace.has('agent'):
-            return 0
-        ms = re.search(r'(\d+)$', trace.get('agent'))
-        if ms:
-            return int(ms.group(1))
-        return 0
-    @staticmethod
-    def trace2tid(trace: Trace) -> int:
-        return 0
-
-    @staticmethod
-    def trace2args(trace: Trace) -> dict:
-        args = trace.get_dict('args').copy()
-        args.update(trace.get_all())
-        for key in ['agentID', 'args', 'cat', 'ltip', 'time', 'reset_time', 'message']:
-            if key in args:
-                del args[key]
-        res = {}
-        for key, value in args.items():
-            if value:
-                res[key] = value
-        return res
 
 class Tracer:
     def __init__(self, events: list[dict]):
