@@ -31,39 +31,6 @@ class Tracer:
         self._events = events
         self._traces = self.prepare(events)
 
-    @property
-    def traces(self) -> list[Trace]:
-        return self._traces
-
-    def set_option(self, key: str, value) -> None:
-        self._options[key] = value
-
-    def is_option(self, key: str) -> bool:
-        return self._options.get(key, False)
-
-    def export(self, filename: str) -> None:
-        Tracer.export_traces(self._traces, f'{filename}.json')
-        Tracer.export_actions(self._traces, f'{filename}-actions.json')
-
-    @staticmethod
-    def export_actions(traces: list[Trace], output_path: str) -> None:
-        res = []
-        for trace in traces:
-            if trace.get('optype') == Trace.ACTION:
-                res.append(trace)
-        Tracer.export_traces(res, output_path)
-
-    @staticmethod
-    def export_traces(traces: list[Trace], output_path: str) -> None:
-        trs = []
-        for trace in traces:
-            type = trace.get('type')
-            if not type in ['SOLVE_MAPF', 'CHECK_SELF_CONTROL_REQS', 'CHECK_ROBOT_BATTERIES', 'INCREMENT_THROUGHPUT']:
-                trs.append(trace)
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(CT.build_file(trs), f, indent=2)
-        print(f"Trace exported to {output_path}")
-
     def prepare(self, events) -> list[Trace]:
         res = []
         last = ''
@@ -134,6 +101,39 @@ class Tracer:
             del self._actions[task]
             return Trace(task_data)
         return {}
+
+    @property
+    def traces(self) -> list[Trace]:
+        return self._traces
+
+    def set_option(self, key: str, value) -> None:
+        self._options[key] = value
+
+    def is_option(self, key: str) -> bool:
+        return self._options.get(key, False)
+
+    def export(self, filename: str) -> None:
+        Tracer.export_traces(self._traces, f'{filename}.json')
+        Tracer.export_actions(self._traces, f'{filename}-actions.json')
+
+    @staticmethod
+    def export_actions(traces: list[Trace], output_path: str) -> None:
+        res = []
+        for trace in traces:
+            if trace.get('optype') == Trace.ACTION:
+                res.append(trace)
+        Tracer.export_traces(res, output_path)
+
+    @staticmethod
+    def export_traces(traces: list[Trace], output_path: str) -> None:
+        trs = []
+        for trace in traces:
+            type = trace.get('type')
+            if not type in ['SOLVE_MAPF', 'CHECK_SELF_CONTROL_REQS', 'CHECK_ROBOT_BATTERIES', 'INCREMENT_THROUGHPUT']:
+                trs.append(trace)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(CT.build_file(trs), f, indent=2)
+        print(f"Trace exported to {output_path}")
 
     def has_task(self, task: str) -> bool:
         return task in self._tasks or task in self._del_tasks
