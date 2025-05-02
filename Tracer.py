@@ -159,13 +159,3 @@ class Tracer:
         plan.add_tasks(self._tasks)
         return plan.render()
 
-    def task2kebab(self, task: str) -> str:
-        ms = re.search(r'(\w+)\.(\w+)\.([\w\+]+)', task)
-        if ms:
-            return '-'.join([ms.group(1), ms.group(2), ms.group(3)])
-        return task
-
-    def scope2cat(self, scope: str) -> str:
-        """Convert scope to category for visualization"""
-        return scope.strip('/').replace('/', '.')
-
