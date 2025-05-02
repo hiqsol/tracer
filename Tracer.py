@@ -20,6 +20,11 @@ from Parser import Parser
 # CT class provides methods to convert Trace objects to Chrome Trace format
 
 class Trace:
+    ACTION = 'A'
+    TASK = 'T'
+    OPERATOR = 'O'
+    PRE = 'P'
+
     def __init__(self, data: dict):
         self._data = self.prepare(data)
 
@@ -153,6 +158,7 @@ class CT:
 class Tracer:
     def __init__(self, events: list[dict]):
         self._tasks = {}
+        self._actions = {}
         self._del_tasks = {}
         self._currs = []
         self._options = {}
@@ -184,8 +190,17 @@ class Tracer:
                 res.append(trace)
         return res
 
-    def export(self, output_path: str) -> None:
-        self.export_traces(self._traces, output_path)
+    def export(self, filename: str) -> None:
+        self.export_traces(self._traces, f'{filename}.json')
+        self.export_actions(self._traces, f'{filename}-actions.json')
+
+    def export_actions(self, traces: list[Trace], output_path: str) -> None:
+        res = []
+        for trace in traces:
+            if trace.get('optype') == Trace.ACTION:
+                res.append(trace)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(CT.build_file(res), f, indent=2)
 
     def export_traces(self, traces: list[Trace], output_path: str) -> None:
         trs = []
@@ -249,8 +264,27 @@ class Tracer:
                     task_data['finish'] = task_data['reset_time']
                     res.append(Trace(task_data))
             return res
+        elif ltip == Parser.TASK_RECEIVED:
+            self._actions[task] = data
+            return []
+        elif ltip == Parser.STATUS_CHANGED:
+            if task not in self._actions:
+                raise ValueError(f"Task {task} not found in actions")
+            if not self.has_task(task):
+                raise ValueError(f"Task {task} not found in tasks: {self._tasks.keys()}")
+            action = self._actions[task]
+            task_data = self.get_task(task).copy()
+            task_data['task'] = 'A:' + task
+            task_data['optype'] = Trace.ACTION
+            task_data['start'] = action['time']
+            task_data['status'] = data['status']
+            task_data['finish'] = data['time']
+            del self._actions[task]
+            return Trace(task_data)
         return {}
 
+    def has_task(self, task: str) -> bool:
+        return task in self._tasks or task in self._del_tasks
     def get_task(self, task: str) -> dict:
         if task in self._tasks:
             return self._tasks[task]

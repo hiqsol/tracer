@@ -2,4 +2,4 @@
 __cache__
 *.pyc
 .aider.*
-1.json
+*.json

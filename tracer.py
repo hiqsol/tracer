@@ -26,7 +26,7 @@ def main():
                 ctr.export(name)
                 print(f'Plan changed No. {no}: {ctr.render_current_plan()}')
     ctr = Tracer(events)
-    ctr.export(f'{output_file}.json')
+    ctr.export(f'{output_file}')
 
     # filter = 'ALLOCATE_RESOURCE.3p.Gu'
     # trs = ctr.filter_by_task(filter)
