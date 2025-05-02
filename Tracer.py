@@ -28,6 +28,10 @@ class Trace:
     def __init__(self, data: dict):
         self._data = self.prepare(data)
 
+    @property
+    def task(self) -> str:
+        return self.get('task')
+
     def get_all(self) -> dict:
         return self._data
     def has(self, key: str) -> bool:
@@ -166,43 +170,30 @@ class Tracer:
         self._events = events
         self._traces = self.prepare(events)
 
+    @property
+    def traces(self) -> list[Trace]:
+        return self._traces
+
     def set_option(self, key: str, value) -> None:
         self._options[key] = value
 
     def is_option(self, key: str) -> bool:
         return self._options.get(key, False)
 
-    def filter_by_task(self, filter: str) -> list[dict]:
-        res = []
-        for trace in self._traces:
-            keep = False
-            args = trace.get_dict('args')
-            message = args.get('message', '')
-            parent = args.get('parent', '')
-            origin = args.get('origin', '')
-            if filter in message:
-                keep = True
-            if parent == filter:
-                keep = True
-            if origin == filter:
-                keep = True
-            if keep:
-                res.append(trace)
-        return res
-
     def export(self, filename: str) -> None:
-        self.export_traces(self._traces, f'{filename}.json')
-        self.export_actions(self._traces, f'{filename}-actions.json')
+        Tracer.export_traces(self._traces, f'{filename}.json')
+        Tracer.export_actions(self._traces, f'{filename}-actions.json')
 
-    def export_actions(self, traces: list[Trace], output_path: str) -> None:
+    @staticmethod
+    def export_actions(traces: list[Trace], output_path: str) -> None:
         res = []
         for trace in traces:
             if trace.get('optype') == Trace.ACTION:
                 res.append(trace)
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(CT.build_file(res), f, indent=2)
+        Tracer.export_traces(res, output_path)
 
-    def export_traces(self, traces: list[Trace], output_path: str) -> None:
+    @staticmethod
+    def export_traces(traces: list[Trace], output_path: str) -> None:
         trs = []
         for trace in traces:
             type = trace.get('type')
@@ -229,7 +220,7 @@ class Tracer:
                 res.extend(data)
             else:
                 res.append(data)
-        for task, data in self._tasks.items():
+        for _, data in self._tasks.items():
             data['finish'] = last
             res.append(Trace(data))
         return res

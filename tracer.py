@@ -4,36 +4,43 @@ import sys
 
 from Parser import Parser
 from Tracer import Tracer, CT
+from Filter import FindChildren, FindRelated
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: parser.py <log_file> [output_file]")
+        print("Usage: parser.py <log_file> [filename]")
         sys.exit(1)
 
     log_file = sys.argv[1]
-    output_file = sys.argv[2] if len(sys.argv) > 2 else 'trace'
+    filename = sys.argv[2] if len(sys.argv) > 2 else 'trace'
 
     parser = Parser(log_file)
-    events = []
-    no = 0
-    for event in parser.events:
-        events.append(event)
-        if event['ltip'] == parser.PLAN_CHANGED:
-            no += 1
-            if no % 10 == 0 and no < 150:
-                name = f'{output_file}-{no:05d}.json'
-                ctr = Tracer(events)
-                ctr.export(name)
-                print(f'Plan changed No. {no}: {ctr.render_current_plan()}')
-    ctr = Tracer(events)
-    ctr.export(f'{output_file}')
 
-    # filter = 'ALLOCATE_RESOURCE.3p.Gu'
-    # trs = ctr.filter_by_task(filter)
-    # ctr.export_traces(trs, f'{output_file}-filtered.json')
+    # events = []
+    # no = 0
+    # for event in parser.events:
+    #     events.append(event)
+    #     if event['ltip'] == parser.PLAN_CHANGED:
+    #         no += 1
+    #         if no % 10 == 0 and no < 150:
+    #             name = f'{filename}-{no:05d}.json'
+    #             ctr = Tracer(events)
+    #             ctr.export(name)
+    #             print(f'Plan changed No. {no}: {ctr.render_current_plan()}')
+
+    ctr = Tracer(parser.events)
+    ctr.export(f'{filename}')
+
+    fbt = FindChildren(ctr)
+    fbt.start('DISP_MSG.3p.cv')
+    fbt.export(f'{filename}-children')
+
+    rel = FindRelated(ctr)
+    rel.start('DISP_MSG.3p.cv')
+    rel.export(f'{filename}-related')
 
     CT.short_names = True
-    ctr.export(f'{output_file}-short.json')
+    ctr.export(f'{filename}-short')
 
 if __name__ == '__main__':
     main()
