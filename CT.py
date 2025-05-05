@@ -64,7 +64,7 @@ class CT:
     @staticmethod
     def trace2args(trace: Trace) -> dict:
         args = trace.get_dict('args').copy()
-        args.update(trace.get_all())
+        args.update(trace.data)
         for key in ['agentID', 'args', 'cat', 'ltip', 'time', 'reset_time', 'message']:
             if key in args:
                 del args[key]

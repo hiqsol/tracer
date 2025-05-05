@@ -13,6 +13,7 @@ class Parser:
     STATUS_CHANGED = 'StatusChanged'
     TASK_RECEIVED = 'TaskReceived'
     TASK_COMPLETED = 'TaskCompleted'
+    START_SESSION = 'StartSession'
 
     @property
     def events(self) -> list[dict]: return self._events
@@ -42,6 +43,7 @@ class Parser:
                 self._parse_TaskCompleted,
                 self._parse_TaskMarkedAsCompleted,
             ],
+            self.START_SESSION:      [self._parse_StartSession],
         }
         if path:
             self.read_file(path)
@@ -285,6 +287,22 @@ class Parser:
             'time': data['time'],
             'scope': data['scope'],
             'tick': data.get('tick', 0)
+        }
+
+    def _parse_StartSession(self, data: dict) -> dict:
+        # {"level":"info","args":["/var/folders/38/k99kqyvn5bs68hdvy6hnw2yc0000gn/T/go-build2480906232/b001/exe/ferroagent","simulate","--log-separate","-a","12","-m","100","-S","51.24.4-N","-t","100000","--incloud","dev","--skip-persisted"],"time":"2025-03-03T13:34:12.638Z","scope":"/","message":"CLI Args"}
+        if data['message'] != 'CLI Args' or data['scope'] != '/':
+            return {}
+        site = ''
+        for i in range(len(data['args'])):
+            if data['args'][i] == '-S':
+                site = data['args'][i + 1]
+        return {
+            'site': site,
+            'type': data['args'][1],
+            'args': data['args'],
+            'time': data['time'],
+            'scope': data['scope'],
         }
 
     def dump(self) -> None:

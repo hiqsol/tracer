@@ -15,9 +15,10 @@ class Trace:
     @property
     def task(self) -> str:
         return self.get('task')
-
-    def get_all(self) -> dict:
+    @property
+    def data(self) -> dict:
         return self._data
+
     def has(self, key: str) -> bool:
         return key in self._data and self._data[key]
     def get(self, key: str) -> str:

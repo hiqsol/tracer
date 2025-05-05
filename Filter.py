@@ -17,8 +17,7 @@ class FindChildren:
 
     def find_all_tasks(self):
         for trace in self.tracer.traces:
-            data = trace.get_all()
-            if self.check_mentions_tasks(data):
+            if self.check_mentions_tasks(trace.data):
                 self.tasks[trace.task] = 1
 
     def check_mentions_tasks(self, data: dict):

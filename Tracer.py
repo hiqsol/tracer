@@ -27,28 +27,30 @@ class Tracer:
         self._del_tasks = {}
         self._options = {}
         self.parser = Parser('')
+        self.session = {}
         self._methods = {
-            'Decomposed':       self._prepare_Decomposed,
-            'ReplacePlan':      self._prepare_ReplacePlan,
-            'NewTask':          self._prepare_NewTask,
-            'TaskCompleted':    self._prepare_TaskCompleted,
-            'PlanChanged':      self._prepare_PlanChanged,
-            'TaskReceived':     self._prepare_TaskReceived,
-            'StatusChanged':    self._prepare_StatusChanged,
+            Parser.DECOMPOSED:      self._prepare_Decomposed,
+            Parser.REPLACE_PLAN:    self._prepare_ReplacePlan,
+            Parser.NEW_TASK:        self._prepare_NewTask,
+            Parser.TASK_COMPLETED:  self._prepare_TaskCompleted,
+            Parser.PLAN_CHANGED:    self._prepare_PlanChanged,
+            Parser.TASK_RECEIVED:   self._prepare_TaskReceived,
+            Parser.STATUS_CHANGED:  self._prepare_StatusChanged,
+            Parser.START_SESSION:   self._prepare_StartSession,
         }
         self._events = events
         self._traces = self.prepare(events)
 
     def prepare(self, events) -> list[Trace]:
         res = []
-        last = ''
+        finish = ''
         for event in events:
             if isinstance(event, Trace):
                 res.append(event)
                 continue
             ltip = event.get('ltip')
             if 'time' in event:
-                last = event['time']
+                finish = event['time']
             data = self._prepare_event(ltip, event)
             if not data:
                 continue
@@ -56,8 +58,9 @@ class Tracer:
                 res.extend(data)
             else:
                 res.append(data)
+        self.session['finish'] = finish
         for _, data in self._tasks.items():
-            data['finish'] = last
+            data['finish'] = finish
             res.append(Trace(data))
         return res
 
@@ -69,7 +72,8 @@ class Tracer:
         return []
 
     def _prepare_Decomposed(self, task: str, data: dict):
-        self._tasks[task]['reset_time'] = data['time']
+        if task in self._tasks:
+            self._tasks[task]['reset_time'] = data['time']
     def _prepare_ReplacePlan(self, _: str, data: dict):
         for _, task_data in self._tasks.items():
             if 'reset_time' not in task_data:
@@ -111,6 +115,10 @@ class Tracer:
         task_data['finish'] = data['time']
         del self._actions[task]
         return Trace(task_data)
+    def _prepare_StartSession(self, _: str, data: dict):
+        data['start'] = data['time']
+        self.session = data
+        return []
 
     @property
     def traces(self) -> list[Trace]:

@@ -5,6 +5,8 @@ import sys
 from Parser import Parser
 from Tracer import Tracer, CT
 from Filter import FindChildren, FindRelated
+from PG import PG
+from DBSaver import DBSaver
 
 def main():
     if len(sys.argv) < 2:
@@ -30,6 +32,10 @@ def main():
 
     ctr = Tracer(parser.events)
     ctr.export(f'{filename}')
+
+    db = PG({})
+    dbt = DBSaver(db, ctr)
+    dbt.save()
 
     fbt = FindChildren(ctr)
     fbt.start('DISP_MSG.3p.cv')
