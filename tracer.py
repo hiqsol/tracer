@@ -33,9 +33,9 @@ def main():
     ctr = Tracer(parser.events)
     ctr.export(f'{filename}')
 
-    db = PG({})
-    dbt = DBSaver(db, ctr)
-    dbt.save()
+    # db = PG({})
+    # dbt = DBSaver(db, ctr)
+    # dbt.save()
 
     fbt = FindChildren(ctr)
     fbt.start('DISP_MSG.3p.cv')
